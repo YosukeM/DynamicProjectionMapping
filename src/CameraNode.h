@@ -10,13 +10,30 @@
 #define __emptyExample__CameraNode__
 
 #include "ofMain.h"
+#include <vector>
+#include "ofxOpenCv.h"
 
 class CameraNode : public ofCamera {
+public:
+	class LightPoint {
+	public:
+		ofVec2f position;
+		int id;
+	};
+protected:
 	const int width, height;
 	const float near, far, fovy;
 	ofVideoGrabber vidGrabber;
 	
+	ofxCvContourFinder finder;
+	ofxCvColorImage colorImage;
+	ofxCvGrayscaleImage grayscaleImage;
+	
+	int lastId = 0;
+	
 public:
+	std::vector<LightPoint> lightPoints;
+	
 	CameraNode();
 	
 	void update();
@@ -32,6 +49,8 @@ public:
 	
 protected:
 	virtual void customDraw();
+	
+	int popNearestWithin(ofVec2f, std::vector<LightPoint>&, float within);
 };
 
 

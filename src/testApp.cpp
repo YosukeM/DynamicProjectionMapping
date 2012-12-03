@@ -3,6 +3,7 @@
 #define foreach BOOST_FOREACH
 #include <GLUT/GLUT.h>
 #include "LevelMeterContent.h"
+#include <boost/lexical_cast.hpp>
 
 //--------------------------------------------------------------
 void testApp::setup() {
@@ -19,10 +20,6 @@ void testApp::setup() {
 	model.setScaleNomalization(false);
 	model.loadModel("cube11.obj");
 	
-	for (int i = 0; i < model.getNumMeshes(); i++) {
-		vertsNum += model.getMesh(i).getNumVertices();
-	}
-	
 	ofEnableNormalizedTexCoords();
 	
 	// プロジェクターとカメラの設定
@@ -37,7 +34,7 @@ void testApp::setup() {
 	camera.setParent(projectorBase);
 	camera.setPosition(0.0f, 0.075f, -0.0575f);
 	// camera.setOrientation(ofVec3f(11.0f, 0.0f, 0.0f));
-	// camera.tilt(-11.0f);
+	camera.tilt(3.0f);
 	
 	// エディタ用カメラ
 	editorCamera.setDistance(1.0f);
@@ -49,44 +46,88 @@ void testApp::setup() {
 }
 
 //--------------------------------------------------------------
-void testApp::update(){
-	const int MIN_AREA = 5;
-	const int MAX_AREA = camera.getWidth() * camera.getHeight() / 3;
-	
+void testApp::update() {
 	camera.update();
 	
-	// VideoGrabberの画像を2値画像に変換
-	colorImage.setFromPixels(camera.getVideoGrabber()->getPixelsRef());
-	grayscaleImage.setFromColorImage(colorImage);
-	grayscaleImage.threshold(10);
-	
-	// 2値画像を元に、輪郭検出を行う
-	finder.findContours(grayscaleImage, MIN_AREA, MAX_AREA, vertsNum, false);
-	
-	// 光点リストの生成
-	lightpoints.clear();
-	foreach (const auto& blob, finder.blobs) {
-		lightpoints.push_back(ofVec2f(blob.centroid.x, blob.centroid.y));
-	}
-	
-	// 考慮すべき頂点のリストの生成
-	determineWhichModelPointsConsidered();
-	
-	// 検出された頂点に近づくようにモデルを移動させる
-	if (lightpoints.size() > 0) {
-		applyOptimizationForTranslation(ofVec3f(0.3f, 0.3f, 0.3f), 7);
-		applyOptimizationForOrientation(ofVec3f(6.0f), 6);
-		applyOptimizationForTranslation(ofVec3f(0.05f, 0.05f, 0.05f), 8);
-		applyOptimizationForOrientation(ofVec3f(1.0f), 6);
-		// std::cout << pointsDifference(lightpoints, getViewportVerts()) << std::endl;
+	if (isTracking) {
+		// 考慮すべき頂点のリストの生成
+		determineWhichModelPointsConsidered();
+		
+		// 検出された頂点に近づくようにモデルを移動させる
+		if (camera.lightPoints.size() > 0) {
+			optimizeWithMappedTranslation(ofVec3f(0.3f, 0.3f, 0.3f), 4);
+			optimizeWithMappedOrientation(ofVec3f(6.0f), 5);
+			optimizeWithMappedTranslation(ofVec3f(0.05f, 0.05f, 0.05f), 4);
+			optimizeWithMappedOrientation(ofVec3f(1.0f), 5);
+			// std::cout << pointsDifference(lightpoints, getViewportVerts()) << std::endl;
+			
+			updateMapping();
+		} else {
+			isTracking = false;
+		}
 	}
 	
 	currentContent->update();
 }
 
+void testApp::updateMapping() {
+	
+	const float WITHIN = 15000.0f;
+	auto lightPoints = camera.lightPoints;	// copy
+	if (lightPoints.size() == 0) return;
+	
+	determineWhichModelPointsConsidered();
+	auto viewportVerts = getViewportVerts();
+	if (viewportVerts.size() == 0) return;
+	
+	mappings.clear();
+	if (lightPoints.size() > viewportVerts.size()) {
+		foreach (const auto& vv, viewportVerts) {
+			float minDistanceSq = WITHIN * WITHIN;
+			auto minItr = lightPoints.end();
+			for (auto itr = lightPoints.begin(); itr != lightPoints.end(); itr++) {
+				float distanceSq = vv.position.distanceSquared(itr->position);
+				if (distanceSq <  minDistanceSq) {
+					minItr = itr;
+					minDistanceSq = distanceSq;
+				}
+			}
+			if (minItr != lightPoints.end()) {
+				VertMapping mapping;
+				mapping.first = minItr->id;
+				mapping.second = vv.source;
+				mappings.insert(mapping);
+				lightPoints.erase(minItr);
+			}
+		}
+	} else {
+		foreach (const auto& lp, lightPoints) {
+			float minDistanceSq = WITHIN * WITHIN;
+			auto minItr = viewportVerts.end();
+			for (auto itr = viewportVerts.begin(); itr != viewportVerts.end(); itr++) {
+				float distanceSq = lp.position.distanceSquared(itr->position);
+				if (distanceSq < minDistanceSq) {
+					minItr = itr;
+					minDistanceSq = distanceSq;
+				}
+			}
+			if (minItr != viewportVerts.end()) {
+				VertMapping mapping;
+				mapping.first = lp.id;
+				mapping.second = minItr->source;
+				mappings.insert(mapping);
+				viewportVerts.erase(minItr);
+			}
+		}
+	}
+	
+	isTracking = true;
+}
+
+
 //--------------------------------------------------------------
-std::vector<ofVec2f> testApp::getViewportVerts(const ofPoint& deltaPos, const ofQuaternion& deltaRot, bool reconsider_points) {
-	std::vector<ofVec2f> result;
+std::vector<testApp::ViewportVert> testApp::getViewportVerts(const ofPoint& deltaPos, const ofQuaternion& deltaRot, bool reconsider_points) {
+	std::vector<ViewportVert> result;
 	const auto points = modelPointsConsidered;
 	
 	auto originalTransform = modelBase.getLocalTransformMatrix();
@@ -100,7 +141,10 @@ std::vector<ofVec2f> testApp::getViewportVerts(const ofPoint& deltaPos, const of
 	foreach (auto vert, modelPointsConsidered) {
 		auto worldVert = vert * modelBase.getGlobalTransformMatrix();
 		auto screenVert = camera.worldToCameraScreen(worldVert);
-		result.push_back(ofVec2f(screenVert.x, screenVert.y));
+		ViewportVert vv;
+		vv.position = screenVert;
+		vv.source = vert;
+		result.push_back(vv);
 	}
 	
 	modelBase.setTransformMatrix(originalTransform);
@@ -113,55 +157,30 @@ std::vector<ofVec2f> testApp::getViewportVerts(const ofPoint& deltaPos, const of
 }
 
 //--------------------------------------------------------------
-float testApp::pointsDifference(const std::vector<ofVec2f>& lightPointsOriginal, const std::vector<ofVec2f>& viewportVertsOriginal) const {
+float testApp::mappedPointsDifference(const std::vector<CameraNode::LightPoint>& lightPoints, const std::vector<ViewportVert>& viewportVerts) const {
 	using limfloat = std::numeric_limits<float>;
 	
 	auto difference = 0.0f;
 	
-	if (viewportVertsOriginal.size() == 0) {
+	if (viewportVerts.size() == 0 || mappings.size() == 0) {
 		return limfloat::infinity();
 	}
 	
-	if (viewportVertsOriginal.size() < lightPointsOriginal.size()) {
-		auto lightPoints = lightPointsOriginal;	// copy
-		const auto& viewportVerts = viewportVertsOriginal;
-		
-		foreach (auto vert, viewportVerts) {
-			int i = 0;
-			int nearest = 0;
-			float minSqDistance = limfloat::infinity();
-			foreach (auto lp, lightPoints) {
-				auto distance = vert.distanceSquared(lp);
-				if (distance < minSqDistance) {
-					nearest = i;
-					minSqDistance = distance;
+	foreach (const auto& mapping, mappings) {
+		foreach (const auto& lp, lightPoints) {
+			if (lp.id == mapping.first) {
+				foreach (const auto& vp, viewportVerts) {
+					if (vp.source == mapping.second) {
+						difference += vp.position.distanceSquared(lp.position);
+						goto NEXT_MAPPING;
+					}
 				}
-				i++;
 			}
-			lightPoints[nearest] = ofVec2f(limfloat::infinity(), limfloat::infinity());
-			difference += minSqDistance;
 		}
-	} else {
-		const auto& lightPoints = lightPointsOriginal;
-		auto viewportVerts = viewportVertsOriginal;	// copy
-		foreach (auto lp, lightPoints) {
-			int i = 0;
-			int nearest = 0;
-			float minSqDistance = limfloat::infinity();
-			foreach (auto vp, viewportVerts) {
-				auto distance = vp.distanceSquared(lp);
-				if (distance < minSqDistance) {
-					nearest = i;
-					minSqDistance = distance;
-				}
-				i++;
-			}
-			viewportVerts[nearest] = ofVec2f(limfloat::infinity(), limfloat::infinity());
-			difference += minSqDistance;
-		}
+		NEXT_MAPPING: continue;
 	}
 	
-	return std::sqrt(difference) + 10.0f * std::abs((int)lightPointsOriginal.size() - (int)viewportVertsOriginal.size());
+	return std::sqrt(difference) + 10.0f * std::abs((int)lightPoints.size() - (int)viewportVerts.size());
 }
 
 void testApp::determineWhichModelPointsConsidered() {
@@ -197,7 +216,7 @@ void testApp::determineWhichModelPointsConsidered() {
 	}
 }
 
-void testApp::applyOptimizationForTranslation(const ofVec3f max, int step) {
+void testApp::optimizeWithMappedTranslation(const ofVec3f max, int step) {
 	using limfloat = std::numeric_limits<float>;
 	
 	float minDx = 0.0f, minDy = 0.0f, minDz = 0.0f;
@@ -207,7 +226,7 @@ void testApp::applyOptimizationForTranslation(const ofVec3f max, int step) {
 	for (int ix = -step; ix <= step; ix++) {
 		float dx = max.x * ix / step;
 		auto verts = getViewportVerts(ofVec3f(dx, 0.0f, 0.0f));
-		auto distance = pointsDifference(lightpoints, verts);
+		auto distance = mappedPointsDifference(camera.lightPoints, verts);
 		if (distance < minDistance) {
 			minDistance = distance;
 			minDx = dx;
@@ -218,7 +237,7 @@ void testApp::applyOptimizationForTranslation(const ofVec3f max, int step) {
 	for (int iy = -step; iy <= step; iy++) {
 		float dy = max.y * iy / step;
 		auto verts = getViewportVerts(ofVec3f(minDx, dy, 0.0f));
-		auto distance = pointsDifference(lightpoints, verts);
+		auto distance = mappedPointsDifference(camera.lightPoints, verts);
 		if (distance < minDistance) {
 			minDistance = distance;
 			minDy = dy;
@@ -229,17 +248,17 @@ void testApp::applyOptimizationForTranslation(const ofVec3f max, int step) {
 	for (int iz = -step; iz <= step; iz++) {
 		float dz = max.z * iz / step;
 		auto verts = getViewportVerts(ofVec3f(minDx, minDy, dz));
-		auto distance = pointsDifference(lightpoints, verts);
+		auto distance = mappedPointsDifference(camera.lightPoints, verts);
 		if (distance < minDistance) {
 			minDistance = distance;
 			minDz = dz;
 		}
 	}
-
+	
 	modelBase.setPosition(modelBase.getPosition() + ofVec3f(minDx, minDy, minDz));
 }
 
-void testApp::applyOptimizationForOrientation(const ofVec3f max, int step, bool reconsider_points) {
+void testApp::optimizeWithMappedOrientation(const ofVec3f max, int step) {
 	auto originalOrientation = modelBase.getOrientationQuat();
 	float minDistance = std::numeric_limits<float>::infinity();
 	
@@ -252,8 +271,129 @@ void testApp::applyOptimizationForOrientation(const ofVec3f max, int step, bool 
 			for (int iz = -step; iz <= step; iz++) {
 				float roll = iz * max.z / step;
 				auto rot = ofQuaternion(tilt, ofVec3f(1,0,0), pan, ofVec3f(0,1,0), roll, ofVec3f(0,0,1));
+				auto verts = getViewportVerts(ofVec3f(), rot);
+				auto distance = mappedPointsDifference(camera.lightPoints, verts);
+				if (distance < minDistance) {
+					minDistance = distance;
+					minRot = rot;
+				}
+			}
+		}
+	}
+	
+	modelBase.setOrientation(modelBase.getOrientationQuat() * minRot);
+}
+
+
+float testApp::pointsDifference(const std::vector<CameraNode::LightPoint>& lightPointsOriginal, const std::vector<ViewportVert>& viewportVertsOriginal) {
+	using limfloat = std::numeric_limits<float>;
+	
+	auto difference = 0.0f;
+	
+	if (viewportVertsOriginal.size() == 0) {
+		return limfloat::infinity();
+	}
+	
+	if (viewportVertsOriginal.size() < lightPointsOriginal.size()) {
+		auto lightPoints = lightPointsOriginal;	// copy
+		const auto& viewportVerts = viewportVertsOriginal;
+		
+		foreach (auto vert, viewportVerts) {
+			int i = 0;
+			int nearest = 0;
+			float minSqDistance = limfloat::infinity();
+			foreach (auto lp, lightPoints) {
+				auto distance = vert.position.distanceSquared(lp.position);
+				if (distance < minSqDistance) {
+					nearest = i;
+					minSqDistance = distance;
+				}
+				i++;
+			}
+			lightPoints[nearest].position = ofVec2f(limfloat::infinity(), limfloat::infinity());
+			difference += minSqDistance;
+		}
+	} else {
+		const auto& lightPoints = lightPointsOriginal;
+		auto viewportVerts = viewportVertsOriginal;	// copy
+		foreach (auto lp, lightPoints) {
+			int i = 0;
+			int nearest = 0;
+			float minSqDistance = limfloat::infinity();
+			foreach (auto vp, viewportVerts) {
+				auto distance = vp.position.distanceSquared(lp.position);
+				if (distance < minSqDistance) {
+					nearest = i;
+					minSqDistance = distance;
+				}
+				i++;
+			}
+			viewportVerts[nearest].position = ofVec2f(limfloat::infinity(), limfloat::infinity());
+			difference += minSqDistance;
+		}
+	}
+	
+	return std::sqrt(difference) + 10.0f * std::abs((int)lightPointsOriginal.size() - (int)viewportVertsOriginal.size());
+}
+
+void testApp::optimizeWithTranslation(const ofVec3f max, int step) {
+	using limfloat = std::numeric_limits<float>;
+	
+	float minDx = 0.0f, minDy = 0.0f, minDz = 0.0f;
+	
+	float minDistance = limfloat::infinity();
+	
+	for (int ix = -step; ix <= step; ix++) {
+		float dx = max.x * ix / step;
+		auto verts = getViewportVerts(ofVec3f(dx, 0.0f, 0.0f));
+		auto distance = pointsDifference(camera.lightPoints, verts);
+		if (distance < minDistance) {
+			minDistance = distance;
+			minDx = dx;
+		}
+	}
+	
+	minDistance = limfloat::infinity();
+	for (int iy = -step; iy <= step; iy++) {
+		float dy = max.y * iy / step;
+		auto verts = getViewportVerts(ofVec3f(minDx, dy, 0.0f));
+		auto distance = pointsDifference(camera.lightPoints, verts);
+		if (distance < minDistance) {
+			minDistance = distance;
+			minDy = dy;
+		}
+	}
+	
+	minDistance = limfloat::infinity();
+	for (int iz = -step; iz <= step; iz++) {
+		float dz = max.z * iz / step;
+		auto verts = getViewportVerts(ofVec3f(minDx, minDy, dz));
+		auto distance = pointsDifference(camera.lightPoints, verts);
+		if (distance < minDistance) {
+			minDistance = distance;
+			minDz = dz;
+		}
+	}
+
+	modelBase.setPosition(modelBase.getPosition() + ofVec3f(minDx, minDy, minDz));
+}
+
+void testApp::optimizeWithOrientation(const ofVec3f max, int step) {
+	auto originalOrientation = modelBase.getOrientationQuat();
+	float minDistance = std::numeric_limits<float>::infinity();
+	bool reconsider_points = true;
+	
+	ofQuaternion minRot;
+	
+	for (int ix = -step; ix <= step; ix++) {
+		float tilt = ix * max.x / step;
+		for (int iy = -step; iy <= step; iy++) {
+			float pan = iy * max.y / step;
+			for (int iz = -step; iz <= step; iz++) {
+				float roll = iz * max.z / step;
+				auto rot = ofQuaternion(tilt, ofVec3f(1,0,0), pan, ofVec3f(0,1,0), roll, ofVec3f(0,0,1));
 				auto verts = getViewportVerts(ofVec3f(), rot, reconsider_points);
-				auto distance = pointsDifference(lightpoints, verts);
+				auto distance = pointsDifference(camera.lightPoints, verts);
 				if (distance < minDistance) {
 					minDistance = distance;
 					minRot = rot;
@@ -314,7 +454,8 @@ void testApp::draw(){
 			glDisable(GL_DEPTH_TEST);
 			camera.getVideoGrabber()->draw(0.0f, 0.0f);
 			
-			/*ofLight light[2];
+			/*
+			ofLight light[2];
 			light[0].setPosition(3.0f, 10.0f, 0.0f);
 			light[0].setDiffuseColor(ofFloatColor(0.5f));
 			light[0].enable();
@@ -330,23 +471,23 @@ void testApp::draw(){
 			modelBase.restoreTransformGL();
 			camera.end();
 			ofDisableLighting();
-			glDisable(GL_DEPTH_TEST);*/
-			
-			ofEnableBlendMode(OF_BLENDMODE_ADD);
+			glDisable(GL_DEPTH_TEST);
+			*/
 			
 			ofSetColor(255, 0, 0);
-			for (auto lp : lightpoints) {
-				ofCircle(lp.x, lp.y, 3);
+			for (auto lp : camera.lightPoints) {
+				ofCircle(lp.position.x, lp.position.y, 3);
+				ofDrawBitmapString(boost::lexical_cast<std::string>(lp.id), lp.position);
 			}
 			ofSetColor(255, 255, 255);
-			
+						
+			ofEnableBlendMode(OF_BLENDMODE_ADD);
 			ofSetColor(0, 0, 255);
 			auto verts = getViewportVerts();
 			for (auto vert : verts) {
-				ofCircle(vert.x, vert.y, 3);
+				ofCircle(vert.position.x, vert.position.y, 3);
 			}
 			ofSetColor(255, 255, 255);
-			
 			ofDisableBlendMode();
 		}
 			break;
@@ -412,10 +553,18 @@ void testApp::keyPressed(int key){
 }
 
 void testApp::activate() {
-	applyOptimizationForTranslation(ofVec3f(3.0f, 3.0f, 3.0f), 30);
-	applyOptimizationForOrientation(ofVec3f(180.0f), 10, true);
-	applyOptimizationForTranslation(ofVec3f(0.01f, 0.01f, 0.01f), 40);
-	applyOptimizationForOrientation(ofVec3f(1.8f), 10, true);
+	if (camera.lightPoints.size() > 0) {
+		for (int i = 0; i < 3; i++) {
+			optimizeWithTranslation(ofVec3f(3.0f, 3.0f, 3.0f), 30);
+			optimizeWithOrientation(ofVec3f(180.0f), 10);
+			optimizeWithTranslation(ofVec3f(0.01f, 0.01f, 0.01f), 40);
+			optimizeWithOrientation(ofVec3f(1.8f), 10);
+			if (pointsDifference(camera.lightPoints, getViewportVerts()) < 30) {
+				break;
+			}
+		}
+		updateMapping();
+	}
 }
 
 //--------------------------------------------------------------

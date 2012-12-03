@@ -10,6 +10,7 @@
 #define __emptyExample__Content__
 
 #include <ofImage.h>
+#include "ofMain.h"
 
 class testApp;
 
@@ -20,6 +21,9 @@ public:
 	ofImage output;
 	
 	void setTestApp(class testApp*);
+	
+	ofVec3f getModelPosition() const;
+	ofQuaternion getModelOrientation() const;
 	
 	virtual void update() = 0;
 	virtual void draw() {};

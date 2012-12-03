@@ -7,7 +7,16 @@
 //
 
 #include "Content.h"
+#include "testApp.h"
 
 void Content::setTestApp(class testApp* app) {
 	parent = app;
+}
+
+ofVec3f Content::getModelPosition() const {
+	return parent->modelBase.getPosition();
+}
+
+ofQuaternion Content::getModelOrientation() const {
+	return parent->modelBase.getOrientationQuat();
 }

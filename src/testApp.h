@@ -32,6 +32,7 @@ private:
 	
 	E_MODE mode;
 	bool isTracking = false;
+	int counter = 0;
 	
 	boost::unordered_set<VertMapping> mappings;
 	boost::unordered_set<ofVec3f> modelPointsConsidered;
@@ -66,6 +67,8 @@ private:
 	float pointsDifference(const std::vector<CameraNode::LightPoint>&, const std::vector<ViewportVert>&);
 	void optimizeWithTranslation(const ofVec3f max, int resolution);
 	void optimizeWithOrientation(const ofVec3f max, int resolution);
+	
+	void drawHowToUse();
 	
 public:
 	void setup();

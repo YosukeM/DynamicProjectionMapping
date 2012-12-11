@@ -1,19 +1,24 @@
 #include "testApp.h"
-#include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
 #include <GLUT/GLUT.h>
-#include "LevelMeterContent.h"
+#include "DiceContent.h"
 #include <boost/lexical_cast.hpp>
+#include <boost/range.hpp>
+#include <boost/range/algorithm.hpp>
+#include <boost/range/algorithm/find.hpp>
+
+using namespace boost::range;
 
 //--------------------------------------------------------------
 void testApp::setup() {
+	ofSetFrameRate(60);
+	
 	mode = E_MODE_CAMERA;
 	ofBackground(0, 0, 0);
 	ofSetWindowShape(1280, 800);
+	ofSetFullscreen(true);
 	
 	// モデルの設定
 	modelBase.setPosition(0.0f, -0.204f, -0.272324f);
-	// modelBase.setOrientation(ofVec3f(310.7939f, 0.0f, 0.0f));
 	modelBase.setScale(0.01f);
 	modelBase.tilt(49.2f);
 	
@@ -24,17 +29,14 @@ void testApp::setup() {
 	
 	// プロジェクターとカメラの設定
 	projectorBase.setPosition(-0.05585744f, 0.0265303f, 0.02653026f);
-	//projectorBase.setOrientation(ofVec3f(45.0f, 0.0f, 0.0f));
 	projectorBase.tilt(-45.0f);
 	
 	projector.setParent(projectorBase);
 	projector.setPosition(-0.0455f, 0.0f, -0.0375f);
-	//projector.setOrientation(ofVec3f(349.177f, 0.0f, 0.0f));
 	
 	camera.setParent(projectorBase);
 	camera.setPosition(0.0f, 0.075f, -0.0575f);
-	// camera.setOrientation(ofVec3f(11.0f, 0.0f, 0.0f));
-	camera.tilt(3.0f);
+	camera.tilt(-3.0f);
 	
 	// エディタ用カメラ
 	editorCamera.setDistance(1.0f);
@@ -42,7 +44,7 @@ void testApp::setup() {
 	editorCamera.setFarClip(100.0f);
 	
 	// コンテンツ
-	currentContent.reset(new LevelMeterContent());
+	currentContent.reset(new DiceContent());
 }
 
 //--------------------------------------------------------------
@@ -55,11 +57,11 @@ void testApp::update() {
 		
 		// 検出された頂点に近づくようにモデルを移動させる
 		if (camera.lightPoints.size() > 0) {
-			optimizeWithMappedTranslation(ofVec3f(0.3f, 0.3f, 0.3f), 4);
+			optimizeWithMappedTranslation(ofVec3f(0.3f, 0.3f, 0.3f), 6);
 			optimizeWithMappedOrientation(ofVec3f(6.0f), 5);
-			optimizeWithMappedTranslation(ofVec3f(0.05f, 0.05f, 0.05f), 4);
+			optimizeWithMappedTranslation(ofVec3f(0.05f, 0.05f, 0.05f), 6);
 			optimizeWithMappedOrientation(ofVec3f(1.0f), 5);
-			// std::cout << pointsDifference(lightpoints, getViewportVerts()) << std::endl;
+			optimizeWithMappedTranslation(ofVec3f(0.02f, 0.02f, 0.02f), 6);
 			
 			updateMapping();
 		} else {
@@ -71,8 +73,8 @@ void testApp::update() {
 }
 
 void testApp::updateMapping() {
+	const float WITHIN = 50.0f;
 	
-	const float WITHIN = 15000.0f;
 	auto lightPoints = camera.lightPoints;	// copy
 	if (lightPoints.size() == 0) return;
 	
@@ -80,44 +82,65 @@ void testApp::updateMapping() {
 	auto viewportVerts = getViewportVerts();
 	if (viewportVerts.size() == 0) return;
 	
-	mappings.clear();
-	if (lightPoints.size() > viewportVerts.size()) {
-		foreach (const auto& vv, viewportVerts) {
-			float minDistanceSq = WITHIN * WITHIN;
-			auto minItr = lightPoints.end();
-			for (auto itr = lightPoints.begin(); itr != lightPoints.end(); itr++) {
-				float distanceSq = vv.position.distanceSquared(itr->position);
-				if (distanceSq <  minDistanceSq) {
-					minItr = itr;
-					minDistanceSq = distanceSq;
-				}
-			}
-			if (minItr != lightPoints.end()) {
-				VertMapping mapping;
-				mapping.first = minItr->id;
-				mapping.second = vv.source;
-				mappings.insert(mapping);
-				lightPoints.erase(minItr);
+	// すでにmappingされているLightPointsとViewportVertsを削除
+	// ロストしたmappingを削除
+	for (auto itr = mappings.begin(); itr != mappings.end(); ) {
+		auto lpItr = find_if(lightPoints, [itr] (const CameraNode::LightPoint& lp) {
+			return lp.id == itr->first;
+		});
+		auto vpItr = find_if(viewportVerts, [itr] (const ViewportVert& vv) {
+			return vv.source == itr->second;
+		});
+		if (lpItr == lightPoints.end() || vpItr == viewportVerts.end()) {
+			itr = mappings.erase(itr);
+		} else {
+			lightPoints.erase(lpItr);
+			viewportVerts.erase(vpItr);
+			itr++;
+		}
+	}
+	
+	// 予測によるLightPointを削除
+	remove_if(lightPoints, [] (const CameraNode::LightPoint& lp) {
+		return lp.isPrediction();
+	});
+	
+	// すべてのLpとVpの距離を計算
+	float distanceSqs[lightPoints.size() * viewportVerts.size()];
+	for (int i = 0; i < lightPoints.size() * viewportVerts.size(); i++) {
+		distanceSqs[i] = 0.0f;
+		int lpI = i % lightPoints.size();
+		int vvI = i / lightPoints.size();
+		distanceSqs[i] = lightPoints[lpI].position.distanceSquared(viewportVerts[vvI].position);
+	}
+	
+	// 距離の近いものから順にマッピングに追加
+	int consumed = 0;
+	while (consumed < lightPoints.size() && consumed < viewportVerts.size()) {
+		int minI = -1;
+		float minDistSq = WITHIN*WITHIN;
+		
+		for (int i = 0; i < lightPoints.size() * viewportVerts.size(); i++) {
+			if (minDistSq > distanceSqs[i]) {
+				minI = i;
+				minDistSq = distanceSqs[i];
 			}
 		}
-	} else {
-		foreach (const auto& lp, lightPoints) {
-			float minDistanceSq = WITHIN * WITHIN;
-			auto minItr = viewportVerts.end();
-			for (auto itr = viewportVerts.begin(); itr != viewportVerts.end(); itr++) {
-				float distanceSq = lp.position.distanceSquared(itr->position);
-				if (distanceSq < minDistanceSq) {
-					minItr = itr;
-					minDistanceSq = distanceSq;
-				}
+		
+		if (minI != -1) {
+			int lpI = minI % lightPoints.size();
+			int vvI = minI / viewportVerts.size();
+			for (int i = 0; i < viewportVerts.size(); i++) {
+				distanceSqs[i * lightPoints.size() + lpI] = std::numeric_limits<float>::infinity();
 			}
-			if (minItr != viewportVerts.end()) {
-				VertMapping mapping;
-				mapping.first = lp.id;
-				mapping.second = minItr->source;
-				mappings.insert(mapping);
-				viewportVerts.erase(minItr);
+			for (int i = 0; i < lightPoints.size(); i++) {
+				distanceSqs[vvI * lightPoints.size() + i] = std::numeric_limits<float>::infinity();
 			}
+			
+			mappings.insert(VertMapping(lightPoints[lpI].id, viewportVerts[vvI].source));
+			consumed++;
+		} else {
+			break;
 		}
 	}
 	
@@ -167,20 +190,20 @@ float testApp::mappedPointsDifference(const std::vector<CameraNode::LightPoint>&
 	}
 	
 	foreach (const auto& mapping, mappings) {
-		foreach (const auto& lp, lightPoints) {
-			if (lp.id == mapping.first) {
-				foreach (const auto& vp, viewportVerts) {
-					if (vp.source == mapping.second) {
-						difference += vp.position.distanceSquared(lp.position);
-						goto NEXT_MAPPING;
-					}
-				}
-			}
+		auto lpitr = find_if(lightPoints, [mapping] (const CameraNode::LightPoint& lp) {
+			return mapping.first == lp.id;
+		});
+		auto vpitr = find_if(viewportVerts, [mapping] (const ViewportVert& vp) {
+			return mapping.second == vp.source;
+		});
+		if (lpitr != lightPoints.end() && vpitr != viewportVerts.end() && !lpitr->isPrediction()) {
+			difference += vpitr->position.distanceSquared(lpitr->position);
+		} else if (vpitr != viewportVerts.end()) {
+			difference += 3.0f * vpitr->position.distanceSquared(lpitr->position);
 		}
-		NEXT_MAPPING: continue;
 	}
 	
-	return std::sqrt(difference) + 10.0f * std::abs((int)lightPoints.size() - (int)viewportVerts.size());
+	return difference;
 }
 
 void testApp::determineWhichModelPointsConsidered() {
@@ -406,6 +429,26 @@ void testApp::optimizeWithOrientation(const ofVec3f max, int step) {
 }
 
 
+void testApp::drawHowToUse() {
+	if (isTracking) {
+		ofDrawBitmapString("TRACKING.", ofVec2f(5, 25));
+	} else {
+		ofDrawBitmapString("NOT TRACKING. Press A key to detect vertices.", ofVec2f(5, 25));
+	}
+	
+	ofDrawBitmapString(
+		"A: Reset vertices detection\n\
+		C: Camera Mode: show the webcam's view.\n\
+		E: Editor Mode: show the computer supeculatation of the world.\n\
+		P: Projection Mode\n\
+		up/down: tilt the camera.\n\
+		shift+up/down: change the fov of the camera.\n\
+		left/right: move the projector relative to the camera.\n\
+		shift+left/right: change the fov of the projector.",
+		ofVec2f(5, 50)
+	);
+}
+
 //--------------------------------------------------------------
 void testApp::draw(){
 	glEnable(GL_DEPTH_TEST);
@@ -434,6 +477,7 @@ void testApp::draw(){
 			
 			editorCamera.end();
 			
+			drawHowToUse();
 		}
 			break;
 			
@@ -452,35 +496,29 @@ void testApp::draw(){
 		case E_MODE_CAMERA:
 		{
 			glDisable(GL_DEPTH_TEST);
+			
+			// カメラの映像を描く
 			camera.getVideoGrabber()->draw(0.0f, 0.0f);
 			
-			/*
-			ofLight light[2];
-			light[0].setPosition(3.0f, 10.0f, 0.0f);
-			light[0].setDiffuseColor(ofFloatColor(0.5f));
-			light[0].enable();
-			light[1].setPosition(-2.0f, 2.0f, -3.0f);
-			light[1].setDiffuseColor(ofFloatColor(0.2f));
-			light[1].enable();
-			
-			glEnable(GL_DEPTH_TEST);
-			ofEnableLighting();
+			// モデルのWireframeを描く
+			// glEnable(GL_DEPTH_TEST);
 			camera.begin();
 			modelBase.transformGL();
-			model.drawFaces();
+			//model.drawFaces();
+			model.drawWireframe();
 			modelBase.restoreTransformGL();
 			camera.end();
-			ofDisableLighting();
-			glDisable(GL_DEPTH_TEST);
-			*/
+			// glDisable(GL_DEPTH_TEST);
 			
+			// LightPointsを赤で描く
 			ofSetColor(255, 0, 0);
 			for (auto lp : camera.lightPoints) {
 				ofCircle(lp.position.x, lp.position.y, 3);
-				ofDrawBitmapString(boost::lexical_cast<std::string>(lp.id), lp.position);
+				ofDrawBitmapString(boost::lexical_cast<std::string>(lp.id), lp.position + ofVec2f(5, -5));
 			}
 			ofSetColor(255, 255, 255);
-						
+			
+			// ViewportVertsを青で描く
 			ofEnableBlendMode(OF_BLENDMODE_ADD);
 			ofSetColor(0, 0, 255);
 			auto verts = getViewportVerts();
@@ -489,6 +527,21 @@ void testApp::draw(){
 			}
 			ofSetColor(255, 255, 255);
 			ofDisableBlendMode();
+			ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+			
+			foreach (const auto& mapping, mappings) {
+				auto lpitr = find_if(camera.lightPoints, [mapping] (const CameraNode::LightPoint& lp) {
+					return mapping.first == lp.id;
+				});
+				auto vertitr = find_if(verts, [mapping] (const ViewportVert& vv) {
+					return vv.source == mapping.second;
+				});
+				if (vertitr != verts.end() && lpitr != camera.lightPoints.end()) {
+					ofLine(lpitr->position, vertitr->position);
+				}
+			}
+			
+			drawHowToUse();
 		}
 			break;
 	}
@@ -503,7 +556,21 @@ void testApp::keyPressed(int key){
 	
 	switch (key) {
 		case OF_KEY_UP:
-			if (!shift) {
+			if (ofGetKeyPressed('r')) {
+				if (ofGetKeyPressed('x')) {
+					modelBase.rotate(1.0f, ofVec3f(0.01f, 0.0f, 0.0f));
+				} else if (ofGetKeyPressed('y')) {
+					modelBase.rotate(1.0f, ofVec3f(0.0f, 0.01f, 0.0f));
+				} else if (ofGetKeyPressed('z')) {
+					modelBase.rotate(1.0f, ofVec3f(0.0f, 0.0f, 0.01f));
+				}
+			} else if (ofGetKeyPressed('x')) {
+				modelBase.move(0.01f, 0.0f, 0.0f);
+			} else if (ofGetKeyPressed('y')) {
+				modelBase.move(0.0f, 0.01f, 0.0f);
+			} else if (ofGetKeyPressed('z')) {
+				modelBase.move(0.0f, 0.0f, 0.01f);
+			} else if (!shift) {
 				camera.tilt(0.2f);
 			} else {
 				camera.setFov(camera.getFov() + 0.2f);
@@ -511,7 +578,21 @@ void testApp::keyPressed(int key){
 			break;
 			
 		case OF_KEY_DOWN:
-			if (!shift) {
+			if (ofGetKeyPressed('r')) {
+				if (ofGetKeyPressed('x')) {
+					modelBase.rotate(-1.0f, ofVec3f(0.01f, 0.0f, 0.0f));
+				} else if (ofGetKeyPressed('y')) {
+					modelBase.rotate(-1.0f, ofVec3f(0.0f, 0.01f, 0.0f));
+				} else if (ofGetKeyPressed('z')) {
+					modelBase.rotate(-1.0f, ofVec3f(0.0f, 0.0f, 0.01f));
+				}
+			} else if (ofGetKeyPressed('x')) {
+				modelBase.move(-0.01f, 0.0f, 0.0f);
+			} else if (ofGetKeyPressed('y')) {
+				modelBase.move(0.0f, -0.01f, 0.0f);
+			} else if (ofGetKeyPressed('z')) {
+				modelBase.move(0.0f, 0.0f, -0.01f);
+			} else if (!shift) {
 				camera.tilt(-0.2f);
 			} else {
 				camera.setFov(camera.getFov() - 0.2f);
@@ -535,7 +616,12 @@ void testApp::keyPressed(int key){
 			break;
 			
 		case 'a':
-			activate();
+			if (shift) {
+				mappings.clear();
+				isTracking = false;
+			} else {
+				activate();
+			}
 			break;
 		case 'c':
 			mode = E_MODE_CAMERA;
@@ -556,13 +642,14 @@ void testApp::activate() {
 	if (camera.lightPoints.size() > 0) {
 		for (int i = 0; i < 3; i++) {
 			optimizeWithTranslation(ofVec3f(3.0f, 3.0f, 3.0f), 30);
-			optimizeWithOrientation(ofVec3f(180.0f), 10);
+			optimizeWithOrientation(ofVec3f(20.0f), 10);
 			optimizeWithTranslation(ofVec3f(0.01f, 0.01f, 0.01f), 40);
 			optimizeWithOrientation(ofVec3f(1.8f), 10);
 			if (pointsDifference(camera.lightPoints, getViewportVerts()) < 30) {
 				break;
 			}
 		}
+		mappings.clear();
 		updateMapping();
 	}
 }

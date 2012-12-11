@@ -25,7 +25,7 @@ public:
 	ofVec3f getModelPosition() const;
 	ofQuaternion getModelOrientation() const;
 	
-	virtual void update() = 0;
+	virtual void update() {};
 	virtual void draw() {};
 };
 

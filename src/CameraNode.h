@@ -19,6 +19,9 @@ public:
 	public:
 		ofVec2f position;
 		int id;
+		int lifetime;
+		LightPoint();
+		bool isPrediction() const;
 	};
 protected:
 	const int width, height;
@@ -46,6 +49,8 @@ public:
 	int getHeight() const { return height; };
 	
 	ofVec3f worldToCameraScreen(const ofVec3f&);
+	
+	LightPoint getLightPointById(int id);
 	
 protected:
 	virtual void customDraw();

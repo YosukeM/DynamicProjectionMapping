@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		332CBACF166D769E00BF6CCF /* DiceContent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 332CBACD166D769E00BF6CCF /* DiceContent.cpp */; };
 		3335B967164F079200715253 /* ProjectorNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3335B965164F079200715253 /* ProjectorNode.cpp */; };
 		3335B96A164F094700715253 /* CameraNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3335B968164F094700715253 /* CameraNode.cpp */; };
 		336F26A21668BF7000B7FDA2 /* Content.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 336F26A01668BF7000B7FDA2 /* Content.cpp */; };
@@ -78,6 +79,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		332CBACD166D769E00BF6CCF /* DiceContent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DiceContent.cpp; sourceTree = "<group>"; };
+		332CBACE166D769E00BF6CCF /* DiceContent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DiceContent.h; sourceTree = "<group>"; };
+		332CBAD01670B97100BF6CCF /* prefix.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = prefix.h; sourceTree = "<group>"; };
 		3335B965164F079200715253 /* ProjectorNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectorNode.cpp; sourceTree = "<group>"; };
 		3335B966164F079200715253 /* ProjectorNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectorNode.h; sourceTree = "<group>"; };
 		3335B968164F094700715253 /* CameraNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CameraNode.cpp; sourceTree = "<group>"; };
@@ -797,6 +801,9 @@
 				336F26A11668BF7000B7FDA2 /* Content.h */,
 				339CB4CB166B1BE800F0BEED /* LevelMeterContent.cpp */,
 				339CB4CC166B1BE800F0BEED /* LevelMeterContent.h */,
+				332CBACD166D769E00BF6CCF /* DiceContent.cpp */,
+				332CBACE166D769E00BF6CCF /* DiceContent.h */,
+				332CBAD01670B97100BF6CCF /* prefix.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -912,6 +919,7 @@
 				338EE401165B2A360001308A /* ofVectorExtension.cpp in Sources */,
 				336F26A21668BF7000B7FDA2 /* Content.cpp in Sources */,
 				339CB4CD166B1BE800F0BEED /* LevelMeterContent.cpp in Sources */,
+				332CBACF166D769E00BF6CCF /* DiceContent.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -939,6 +947,8 @@
 				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = src/prefix.h;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = YES;
 				GCC_WARN_ABOUT_INVALID_OFFSETOF_MACRO = NO;
@@ -972,6 +982,8 @@
 				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = src/prefix.h;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_UNROLL_LOOPS = YES;
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = YES;
@@ -996,7 +1008,7 @@
 		E4B69B600A3A1757003C02F2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "compiler-default";
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1009,7 +1021,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = NONE;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				GCC_PREFIX_HEADER = src/prefix.h;
 				HEADER_SEARCH_PATHS = (
 					"$(OF_CORE_HEADERS)",
 					src,
@@ -1095,7 +1107,7 @@
 		E4B69B610A3A1757003C02F2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "compiler-default";
 				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1107,7 +1119,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = NONE;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				GCC_PREFIX_HEADER = src/prefix.h;
 				HEADER_SEARCH_PATHS = (
 					"$(OF_CORE_HEADERS)",
 					src,

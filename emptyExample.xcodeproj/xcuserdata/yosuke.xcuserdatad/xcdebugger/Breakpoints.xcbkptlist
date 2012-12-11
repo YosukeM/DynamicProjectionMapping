@@ -11,9 +11,20 @@
          timestampString = "376889800.966505"
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "63"
+         endingLineNumber = "63">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/testApp.cpp"
+         timestampString = "376889800.966505"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
          startingLineNumber = "228"
          endingLineNumber = "228"
-         landmarkName = "testApp::determineWhichModelPointsConsidered()"
+         landmarkName = "testApp::applyOptimizationForTranslation(const ofVec3f max, int step)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -26,7 +37,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "232"
          endingLineNumber = "232"
-         landmarkName = "testApp::determineWhichModelPointsConsidered()"
+         landmarkName = "testApp::applyOptimizationForTranslation(const ofVec3f max, int step)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -39,7 +50,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "399"
          endingLineNumber = "399"
-         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
+         landmarkName = "testApp::draw()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -52,7 +63,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "406"
          endingLineNumber = "406"
-         landmarkName = "testApp::optimizeWithOrientation(const ofVec3f max, int step)"
+         landmarkName = "testApp::draw()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -65,7 +76,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "400"
          endingLineNumber = "400"
-         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
+         landmarkName = "testApp::draw()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -78,7 +89,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "397"
          endingLineNumber = "397"
-         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
+         landmarkName = "testApp::draw()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -91,7 +102,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "396"
          endingLineNumber = "396"
-         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
+         landmarkName = "testApp::draw()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -104,7 +115,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "479"
          endingLineNumber = "479"
-         landmarkName = "testApp::draw()"
+         landmarkName = "testApp::keyPressed(int key)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -117,7 +128,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "234"
          endingLineNumber = "234"
-         landmarkName = "testApp::determineWhichModelPointsConsidered()"
+         landmarkName = "testApp::applyOptimizationForTranslation(const ofVec3f max, int step)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -130,7 +141,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "235"
          endingLineNumber = "235"
-         landmarkName = "testApp::determineWhichModelPointsConsidered()"
+         landmarkName = "testApp::applyOptimizationForTranslation(const ofVec3f max, int step)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -143,7 +154,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "366"
          endingLineNumber = "366"
-         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
+         landmarkName = "testApp::draw()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -169,7 +180,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "179"
          endingLineNumber = "179"
-         landmarkName = "testApp::getViewportVerts(const ofPoint&amp; deltaPos, const ofQuaternion&amp; deltaRot, bool reconsider_points)"
+         landmarkName = "testApp::pointsDifference(const std::vector&lt;ofVec2f&gt;&amp; lightPointsOriginal, const std::vector&lt;ofVec2f&gt;&amp; viewportVertsOriginal)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -182,7 +193,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "481"
          endingLineNumber = "481"
-         landmarkName = "testApp::draw()"
+         landmarkName = "testApp::keyPressed(int key)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -195,7 +206,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "180"
          endingLineNumber = "180"
-         landmarkName = "testApp::getViewportVerts(const ofPoint&amp; deltaPos, const ofQuaternion&amp; deltaRot, bool reconsider_points)"
+         landmarkName = "testApp::pointsDifference(const std::vector&lt;ofVec2f&gt;&amp; lightPointsOriginal, const std::vector&lt;ofVec2f&gt;&amp; viewportVertsOriginal)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -208,7 +219,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "186"
          endingLineNumber = "186"
-         landmarkName = "testApp::mappedPointsDifference(const std::vector&lt;CameraNode::LightPoint&gt;&amp; lightPoints, const std::vector&lt;ViewportVert&gt;&amp; viewportVerts)"
+         landmarkName = "testApp::pointsDifference(const std::vector&lt;ofVec2f&gt;&amp; lightPointsOriginal, const std::vector&lt;ofVec2f&gt;&amp; viewportVertsOriginal)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -234,7 +245,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "519"
          endingLineNumber = "519"
-         landmarkName = "testApp::draw()"
+         landmarkName = "testApp::mouseDragged(int x, int y, int button)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -247,7 +258,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "502"
          endingLineNumber = "502"
-         landmarkName = "testApp::draw()"
+         landmarkName = "testApp::keyPressed(int key)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -259,9 +270,7 @@
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "54"
-         endingLineNumber = "54"
-         landmarkName = "testApp::update()"
-         landmarkType = "5">
+         endingLineNumber = "54">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -273,7 +282,124 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "76"
          endingLineNumber = "76"
-         landmarkName = "testApp::updateMapping()"
+         landmarkName = "testApp::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/CameraNode.cpp"
+         timestampString = "376885334.524265"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "157"
+         endingLineNumber = "157"
+         landmarkName = "CameraNode::popNearestWithin(ofVec2f pos, std::vector&lt;LightPoint&gt;&amp; lightPoints, float within)"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/testApp.cpp"
+         timestampString = "376669604.524632"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "52"
+         endingLineNumber = "52"
+         landmarkName = "testApp::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/CameraNode.cpp"
+         timestampString = "376674181.220913"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "77"
+         endingLineNumber = "77"
+         landmarkName = "CameraNode::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/CameraNode.cpp"
+         timestampString = "376885334.524265"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "131"
+         endingLineNumber = "131"
+         landmarkName = "CameraNode::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/CameraNode.cpp"
+         timestampString = "376885334.524265"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "102"
+         endingLineNumber = "102"
+         landmarkName = "CameraNode::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/CameraNode.cpp"
+         timestampString = "376885334.524265"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "103"
+         endingLineNumber = "103"
+         landmarkName = "CameraNode::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/CameraNode.cpp"
+         timestampString = "376674181.220913"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "68"
+         endingLineNumber = "68"
+         landmarkName = "CameraNode::update()"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/Content.cpp"
+         timestampString = "376916489.666569"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "25"
+         endingLineNumber = "25"
+         landmarkName = "Content::generateOutput(ofImage&amp; image0, ofImage&amp; image1, ofImage&amp; image2, ofImage&amp; image3, ofImage&amp; image4, ofImage&amp; image5)"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "src/Content.cpp"
+         timestampString = "376918260.862042"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "48"
+         endingLineNumber = "48"
+         landmarkName = "Content::generateOutput(ofImage&amp; image0, ofImage&amp; image1, ofImage&amp; image2, ofImage&amp; image3, ofImage&amp; image4, ofImage&amp; image5)"
          landmarkType = "5">
       </FileBreakpoint>
    </FileBreakpoints>

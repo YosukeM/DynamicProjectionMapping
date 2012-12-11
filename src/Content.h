@@ -25,6 +25,8 @@ public:
 	ofVec3f getModelPosition() const;
 	ofQuaternion getModelOrientation() const;
 	
+	void generateOutput(ofImage&, ofImage&, ofImage&, ofImage&, ofImage&, ofImage&, const ofColor& fillColor = ofColor::white);
+	
 	virtual void update() {};
 	virtual void draw() {};
 };

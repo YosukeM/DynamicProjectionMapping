@@ -12,8 +12,11 @@
 #include "Content.h"
 
 class DiceContent : public Content {
+	ofImage srcImage[6];
 public:
 	DiceContent();
+	
+	void update();
 };
 
 #endif /* defined(__emptyExample__DiceContent__) */

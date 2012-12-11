@@ -20,6 +20,9 @@ LevelMeterContent::LevelMeterContent() {
 void LevelMeterContent::update() {
 	video.update();
 	output.setFromPixels(video.getPixels(), video.getWidth(), video.getHeight(), OF_IMAGE_COLOR);
+	
+	ofVec3f pos = getModelPosition();
+	ofQuaternion quat = getModelOrientation();
 }
 
 void LevelMeterContent::draw() {

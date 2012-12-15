@@ -10,6 +10,7 @@
 #include <boost/unordered_set.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "Content.h"
+#include "MovementPredictor.h"
 
 class testApp : public ofBaseApp{
 public:
@@ -44,6 +45,7 @@ private:
 	boost::scoped_ptr<Content> currentContent;
 
 	ofEasyCam editorCamera;
+	MovementPredictor predictor;
 	
 public:
 	ofNode modelBase;
@@ -52,6 +54,7 @@ private:
 	std::vector<ViewportVert> getViewportVerts(const ofPoint& deltaPos = ofPoint(), const ofQuaternion& deltaRot = ofQuaternion(), bool reconsider_points = false);
 
 	void updateMapping();
+	void predictNextLightPoints();
 	
 	// tracking
 	float mappedPointsDifference(const std::vector<CameraNode::LightPoint>&, const std::vector<ViewportVert>&) const;
@@ -60,11 +63,13 @@ private:
 	
 	void optimizeWithMappedTranslation(const ofVec3f max, int resolution);
 	void optimizeWithMappedOrientation(const ofVec3f max, int resolution);
+	void optimizeWithMapping(const ofVec3f& maxTrans, int transRes, const ofVec3f& maxRot, int rotRes);
 	
 	// not tracking
 	void activate();
 	
 	float pointsDifference(const std::vector<CameraNode::LightPoint>&, const std::vector<ViewportVert>&);
+	void optimize(const ofVec3f& maxTrans, int transRes, const ofVec3f& maxRot, int rotRes);
 	void optimizeWithTranslation(const ofVec3f max, int resolution);
 	void optimizeWithOrientation(const ofVec3f max, int resolution);
 	

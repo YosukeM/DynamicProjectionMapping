@@ -1,5 +1,9 @@
 #include "testApp.h"
+#ifndef _WIN32
 #include <GLUT/GLUT.h>
+#else
+#include "glut.h"
+#endif
 #include "DiceContent.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/range.hpp>
@@ -7,6 +11,7 @@
 #include <boost/range/algorithm/find.hpp>
 
 using namespace boost::range;
+typedef std::numeric_limits<float> limfloat;
 
 //--------------------------------------------------------------
 void testApp::setup() {
@@ -58,18 +63,52 @@ void testApp::update() {
 		// 検出された頂点に近づくようにモデルを移動させる
 		if (camera.lightPoints.size() > 0) {
 			optimizeWithMappedTranslation(ofVec3f(0.3f, 0.3f, 0.3f), 6);
-			optimizeWithMappedOrientation(ofVec3f(6.0f), 5);
+			optimizeWithMappedOrientation(ofVec3f(5.0f), 5);
+			//optimizeWithMapping(ofVec3f(0.05f), 1, ofVec3f(1.0f), 2);
 			optimizeWithMappedTranslation(ofVec3f(0.05f, 0.05f, 0.05f), 6);
 			optimizeWithMappedOrientation(ofVec3f(1.0f), 5);
 			optimizeWithMappedTranslation(ofVec3f(0.02f, 0.02f, 0.02f), 6);
 			
 			updateMapping();
+			
+			predictNextLightPoints();
+			
 		} else {
 			isTracking = false;
 		}
+	} else {
+		predictor.clearHistory();
 	}
 	
 	currentContent->update();
+}
+
+void testApp::predictNextLightPoints() {
+	if (predictor.canPredict()) {
+		MovementPredictor::Transform transform;
+		transform.position = modelBase.getPosition();
+		transform.orientation = modelBase.getOrientationQuat();
+		predictor.pushHistory(transform);
+		
+		transform = predictor.predictNext();
+		auto vps = getViewportVerts(
+			transform.position - modelBase.getPosition(),
+			transform.orientation * modelBase.getOrientationQuat().inverse()
+		);
+		foreach (const auto& vp, vps) {
+			auto mapItr = find_if(mappings, [vp] (const VertMapping& vm) {
+				return vm.second == vp.source;
+			});
+			if (mapItr != mappings.end()) {
+				auto lpItr = find_if(camera.lightPoints, [mapItr] (const CameraNode::LightPoint& lp) {
+					return mapItr->first == lp.id;
+				});
+				if (lpItr != camera.lightPoints.end()) {
+					lpItr->position = vp.position;
+				}
+			}
+		}
+	}
 }
 
 void testApp::updateMapping() {
@@ -93,6 +132,8 @@ void testApp::updateMapping() {
 		});
 		if (lpItr == lightPoints.end() || vpItr == viewportVerts.end()) {
 			itr = mappings.erase(itr);
+		} else if (lpItr->position.distanceSquared(vpItr->position) > WITHIN*WITHIN) {
+			itr = mappings.erase(itr);
 		} else {
 			lightPoints.erase(lpItr);
 			viewportVerts.erase(vpItr);
@@ -106,7 +147,7 @@ void testApp::updateMapping() {
 	});
 	
 	// すべてのLpとVpの距離を計算
-	float distanceSqs[lightPoints.size() * viewportVerts.size()];
+	float* distanceSqs = new float[lightPoints.size() * viewportVerts.size()];
 	for (int i = 0; i < lightPoints.size() * viewportVerts.size(); i++) {
 		distanceSqs[i] = 0.0f;
 		int lpI = i % lightPoints.size();
@@ -129,7 +170,7 @@ void testApp::updateMapping() {
 		
 		if (minI != -1) {
 			int lpI = minI % lightPoints.size();
-			int vvI = minI / viewportVerts.size();
+			int vvI = minI / lightPoints.size();
 			for (int i = 0; i < viewportVerts.size(); i++) {
 				distanceSqs[i * lightPoints.size() + lpI] = std::numeric_limits<float>::infinity();
 			}
@@ -143,6 +184,8 @@ void testApp::updateMapping() {
 			break;
 		}
 	}
+	
+	delete[] distanceSqs;
 	
 	isTracking = true;
 }
@@ -181,7 +224,6 @@ std::vector<testApp::ViewportVert> testApp::getViewportVerts(const ofPoint& delt
 
 //--------------------------------------------------------------
 float testApp::mappedPointsDifference(const std::vector<CameraNode::LightPoint>& lightPoints, const std::vector<ViewportVert>& viewportVerts) const {
-	using limfloat = std::numeric_limits<float>;
 	
 	auto difference = 0.0f;
 	
@@ -240,8 +282,6 @@ void testApp::determineWhichModelPointsConsidered() {
 }
 
 void testApp::optimizeWithMappedTranslation(const ofVec3f max, int step) {
-	using limfloat = std::numeric_limits<float>;
-	
 	float minDx = 0.0f, minDy = 0.0f, minDz = 0.0f;
 	
 	float minDistance = limfloat::infinity();
@@ -309,8 +349,6 @@ void testApp::optimizeWithMappedOrientation(const ofVec3f max, int step) {
 
 
 float testApp::pointsDifference(const std::vector<CameraNode::LightPoint>& lightPointsOriginal, const std::vector<ViewportVert>& viewportVertsOriginal) {
-	using limfloat = std::numeric_limits<float>;
-	
 	auto difference = 0.0f;
 	
 	if (viewportVertsOriginal.size() == 0) {
@@ -359,9 +397,44 @@ float testApp::pointsDifference(const std::vector<CameraNode::LightPoint>& light
 	return std::sqrt(difference) + 10.0f * std::abs((int)lightPointsOriginal.size() - (int)viewportVertsOriginal.size());
 }
 
-void testApp::optimizeWithTranslation(const ofVec3f max, int step) {
-	using limfloat = std::numeric_limits<float>;
+void testApp::optimizeWithMapping(const ofVec3f& maxTrans, int transRes, const ofVec3f& maxRot, int rotRes) {
+	auto originalOrientation = modelBase.getOrientationQuat();
+	float minDistance = std::numeric_limits<float>::infinity();
+	bool reconsider_points = true;
 	
+	ofVec3f minTrans;
+	ofQuaternion minRot;
+
+	for (int tx = -transRes; tx <= transRes; tx++) {
+		for (int ty = -transRes; ty <= transRes; ty++) {
+			for (int tz = -transRes; tz <= transRes; tz++) {
+				ofVec3f trans(maxTrans.x * tx / transRes, maxTrans.y * ty / transRes, maxTrans.z * tz / transRes);
+				for (int ix = -rotRes; ix <= rotRes; ix++) {
+					float tilt = ix * maxRot.x / rotRes;
+					for (int iy = -rotRes; iy <= rotRes; iy++) {
+						float pan = iy * maxRot.y / rotRes;
+						for (int iz = -rotRes; iz <= rotRes; iz++) {
+							float roll = iz * maxRot.z / rotRes;
+							auto rot = ofQuaternion(tilt, ofVec3f(1,0,0), pan, ofVec3f(0,1,0), roll, ofVec3f(0,0,1));
+							auto verts = getViewportVerts(trans, rot, reconsider_points);
+							auto distance = pointsDifference(camera.lightPoints, verts);
+							if (distance < minDistance) {
+								minDistance = distance;
+								minRot = rot;
+								minTrans = trans;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	modelBase.move(minTrans);
+	modelBase.setOrientation(modelBase.getOrientationQuat() * minRot);
+}
+
+void testApp::optimizeWithTranslation(const ofVec3f max, int step) {
 	float minDx = 0.0f, minDy = 0.0f, minDz = 0.0f;
 	
 	float minDistance = limfloat::infinity();
@@ -425,6 +498,44 @@ void testApp::optimizeWithOrientation(const ofVec3f max, int step) {
 		}
 	}
 	
+	modelBase.setOrientation(modelBase.getOrientationQuat() * minRot);
+}
+
+void testApp::optimize(const ofVec3f& maxTrans, int transRes, const ofVec3f& maxRot, int rotRes) {
+	auto originalOrientation = modelBase.getOrientationQuat();
+	float minDistance = std::numeric_limits<float>::infinity();
+	bool reconsider_points = true;
+	
+	ofVec3f minTrans;
+	ofQuaternion minRot;
+	
+	
+	for (int tx = -transRes; tx <= transRes; tx++) {
+		for (int ty = -transRes; ty <= transRes; ty++) {
+			for (int tz = -transRes; tz <= transRes; tz++) {
+				ofVec3f trans(maxTrans.x * tx / transRes, maxTrans.y * ty / transRes, maxTrans.z * tz / transRes);
+				for (int ix = -rotRes; ix <= rotRes; ix++) {
+					float tilt = ix * maxRot.x / rotRes;
+					for (int iy = -rotRes; iy <= rotRes; iy++) {
+						float pan = iy * maxRot.y / rotRes;
+						for (int iz = -rotRes; iz <= rotRes; iz++) {
+							float roll = iz * maxRot.z / rotRes;
+							auto rot = ofQuaternion(tilt, ofVec3f(1,0,0), pan, ofVec3f(0,1,0), roll, ofVec3f(0,0,1));
+							auto verts = getViewportVerts(trans, rot, reconsider_points);
+							auto distance = pointsDifference(camera.lightPoints, verts);
+							if (distance < minDistance) {
+								minDistance = distance;
+								minRot = rot;
+								minTrans = trans;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	modelBase.move(minTrans);
 	modelBase.setOrientation(modelBase.getOrientationQuat() * minRot);
 }
 
@@ -512,7 +623,7 @@ void testApp::draw(){
 			
 			// LightPointsを赤で描く
 			ofSetColor(255, 0, 0);
-			for (auto lp : camera.lightPoints) {
+			foreach (auto lp, camera.lightPoints) {
 				ofCircle(lp.position.x, lp.position.y, 3);
 				ofDrawBitmapString(boost::lexical_cast<std::string>(lp.id), lp.position + ofVec2f(5, -5));
 			}
@@ -522,7 +633,7 @@ void testApp::draw(){
 			ofEnableBlendMode(OF_BLENDMODE_ADD);
 			ofSetColor(0, 0, 255);
 			auto verts = getViewportVerts();
-			for (auto vert : verts) {
+			foreach (auto vert, verts) {
 				ofCircle(vert.position.x, vert.position.y, 3);
 			}
 			ofSetColor(255, 255, 255);
@@ -615,13 +726,13 @@ void testApp::keyPressed(int key){
 			}
 			break;
 			
+		case 'A':
+			mappings.clear();
+			isTracking = false;
+			break;
+			
 		case 'a':
-			if (shift) {
-				mappings.clear();
-				isTracking = false;
-			} else {
-				activate();
-			}
+			activate();
 			break;
 		case 'c':
 			mode = E_MODE_CAMERA;
@@ -641,10 +752,13 @@ void testApp::keyPressed(int key){
 void testApp::activate() {
 	if (camera.lightPoints.size() > 0) {
 		for (int i = 0; i < 3; i++) {
-			optimizeWithTranslation(ofVec3f(3.0f, 3.0f, 3.0f), 30);
-			optimizeWithOrientation(ofVec3f(20.0f), 10);
-			optimizeWithTranslation(ofVec3f(0.01f, 0.01f, 0.01f), 40);
-			optimizeWithOrientation(ofVec3f(1.8f), 10);
+			optimizeWithTranslation(ofVec3f(3.0f), 5);
+			optimizeWithOrientation(ofVec3f(90.0f), 3);
+			optimizeWithTranslation(ofVec3f(0.9f), 5);
+			optimizeWithOrientation(ofVec3f(30.0f), 10);
+			optimize(ofVec3f(0.1f), 2, ofVec3f(2.8), 1);
+			optimizeWithTranslation(ofVec3f(0.05f), 5);
+			optimizeWithOrientation(ofVec3f(2.0f), 5);
 			if (pointsDifference(camera.lightPoints, getViewportVerts()) < 30) {
 				break;
 			}

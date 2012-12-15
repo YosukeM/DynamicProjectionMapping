@@ -21,22 +21,22 @@ bool CameraNode::LightPoint::isPrediction() const {
 
 
 CameraNode::CameraNode()
-	: width(720), height(480), near(0.01f), far(100.0f), fovy(29.8f)
+	: _width(720), _height(480), _near(0.01f), _far(100.0f), _fovy(29.8f)
 {
 	// 1280, 720
 	// 720, 480
-	setNearClip(near);
-	setFarClip(far);
-	setFov(fovy);
+	setNearClip(_near);
+	setFarClip(_far);
+	setFov(_fovy);
 	//setScale(0.5f);
 	
 	vidGrabber.setDeviceID(0);
-	vidGrabber.initGrabber(width, height);
+	vidGrabber.initGrabber(_width, _height);
 }
 
 void CameraNode::update() {
 	const int MIN_AREA = 5;
-	const int MAX_AREA = width * height / 3;
+	const int MAX_AREA = _width * _height / 3;
 	const int MAX_VERTS_NUM = 11;
 	const float CONTI = 50.0f;
 	
@@ -97,6 +97,7 @@ void CameraNode::update() {
 		lp.position = blobs[minBlob].centroid;
 		lp.id = lightPoints[minLp].id;
 		lightPoints[minLp].id = -1;
+		lightPoints[minLp].lifetime = 0;
 		nextLightPoints.push_back(lp);
 		
 		for (int i = 0; i < blobs.size(); i++) {
@@ -116,7 +117,7 @@ void CameraNode::update() {
 			if (!isConsumedLps[i]) {
 				// 残った頂点の寿命を減らし、0より大きいものだけを残す
 				itr->lifetime--;
-				if (itr->lifetime > 0) {
+				if (itr->lifetime > 0 && itr->id != -1) {
 					nextLightPoints.push_back(*itr);
 				}
 			}
@@ -173,7 +174,7 @@ ofVideoGrabber* CameraNode::getVideoGrabber() {
 }
 
 void CameraNode::begin() {
-	ofCamera::begin(ofRectangle(0.0f, 0.0f, width, height));
+	ofCamera::begin(ofRectangle(0.0f, 0.0f, _width, _height));
 }
 
 void CameraNode::end() {
@@ -192,6 +193,6 @@ void CameraNode::customDraw() {
 }
 
 ofVec3f CameraNode::worldToCameraScreen(const ofVec3f& p) {
-	ofRectangle rect(0.0f, 0.0f, width, height);
+	ofRectangle rect(0.0f, 0.0f, _width, _height);
 	return worldToScreen(p, rect);
 }

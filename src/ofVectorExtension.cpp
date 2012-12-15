@@ -10,8 +10,6 @@
 #include <boost/unordered_set.hpp>
 
 size_t hash_value( const ofVec3f& d ) {
-	// 複数の値のハッシュ値を組み合わせてハッシュ値を計算するには、
-	// boost::hash_combine を使います。
 	size_t h = 0;
 	boost::hash_combine(h, d.x);
 	boost::hash_combine(h, d.y);

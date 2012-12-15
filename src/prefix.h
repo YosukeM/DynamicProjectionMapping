@@ -9,7 +9,9 @@
 #ifndef emptyExample_prefix_h
 #define emptyExample_prefix_h
 
+#ifndef _WIN32
 #include </System/Library/Frameworks/Carbon.framework/Headers/Carbon.h>
+#endif
 
 #include <boost/foreach.hpp>
 

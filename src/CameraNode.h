@@ -24,8 +24,8 @@ public:
 		bool isPrediction() const;
 	};
 protected:
-	const int width, height;
-	const float near, far, fovy;
+	const int _width, _height;
+	const float _near, _far, _fovy;
 	ofVideoGrabber vidGrabber;
 	
 	ofxCvContourFinder finder;
@@ -45,8 +45,8 @@ public:
 	void begin();
 	void end();
 	
-	int getWidth() const { return width; };
-	int getHeight() const { return height; };
+	int getWidth() const { return _width; };
+	int getHeight() const { return _height; };
 	
 	ofVec3f worldToCameraScreen(const ofVec3f&);
 	

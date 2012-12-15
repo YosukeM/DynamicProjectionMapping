@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3328E0F1167C71CD00E0836D /* MovementPredictor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3328E0EF167C71CD00E0836D /* MovementPredictor.cpp */; };
 		332CBACF166D769E00BF6CCF /* DiceContent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 332CBACD166D769E00BF6CCF /* DiceContent.cpp */; };
 		3335B967164F079200715253 /* ProjectorNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3335B965164F079200715253 /* ProjectorNode.cpp */; };
 		3335B96A164F094700715253 /* CameraNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3335B968164F094700715253 /* CameraNode.cpp */; };
@@ -79,6 +80,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3328E0EF167C71CD00E0836D /* MovementPredictor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MovementPredictor.cpp; sourceTree = "<group>"; };
+		3328E0F0167C71CD00E0836D /* MovementPredictor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovementPredictor.h; sourceTree = "<group>"; };
 		332CBACD166D769E00BF6CCF /* DiceContent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DiceContent.cpp; sourceTree = "<group>"; };
 		332CBACE166D769E00BF6CCF /* DiceContent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DiceContent.h; sourceTree = "<group>"; };
 		332CBAD01670B97100BF6CCF /* prefix.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = prefix.h; sourceTree = "<group>"; };
@@ -804,6 +807,8 @@
 				332CBACD166D769E00BF6CCF /* DiceContent.cpp */,
 				332CBACE166D769E00BF6CCF /* DiceContent.h */,
 				332CBAD01670B97100BF6CCF /* prefix.h */,
+				3328E0EF167C71CD00E0836D /* MovementPredictor.cpp */,
+				3328E0F0167C71CD00E0836D /* MovementPredictor.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -920,6 +925,7 @@
 				336F26A21668BF7000B7FDA2 /* Content.cpp in Sources */,
 				339CB4CD166B1BE800F0BEED /* LevelMeterContent.cpp in Sources */,
 				332CBACF166D769E00BF6CCF /* DiceContent.cpp in Sources */,
+				3328E0F1167C71CD00E0836D /* MovementPredictor.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -28,7 +28,7 @@ void testApp::setup() {
 	modelBase.tilt(49.2f);
 	
 	model.setScaleNomalization(false);
-	model.loadModel("cube11.obj");
+	model.loadModel("cube_ver5.obj");
 	
 	ofEnableNormalizedTexCoords();
 	
@@ -71,7 +71,7 @@ void testApp::update() {
 			
 			updateMapping();
 			
-			predictNextLightPoints();
+			//predictNextLightPoints();
 			
 		} else {
 			isTracking = false;

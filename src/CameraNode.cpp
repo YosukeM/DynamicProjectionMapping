@@ -21,7 +21,7 @@ bool CameraNode::LightPoint::isPrediction() const {
 
 
 CameraNode::CameraNode()
-	: _width(720), _height(480), _near(0.01f), _far(100.0f), _fovy(29.8f)
+	: _width(1280), _height(720), _near(0.01f), _far(100.0f), _fovy(29.8f)
 {
 	// 1280, 720
 	// 720, 480
@@ -30,7 +30,7 @@ CameraNode::CameraNode()
 	setFov(_fovy);
 	//setScale(0.5f);
 	
-	vidGrabber.setDeviceID(0);
+	vidGrabber.setDeviceID(1);
 	vidGrabber.initGrabber(_width, _height);
 }
 

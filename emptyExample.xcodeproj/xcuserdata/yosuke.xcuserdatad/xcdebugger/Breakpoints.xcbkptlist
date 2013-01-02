@@ -65,7 +65,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "447"
          endingLineNumber = "447"
-         landmarkName = "testApp::optimizeWithOrientation(const ofVec3f max, int step)"
+         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -91,7 +91,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "558"
          endingLineNumber = "558"
-         landmarkName = "testApp::draw()"
+         landmarkName = "testApp::drawHowToUse()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -130,7 +130,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "423"
          endingLineNumber = "423"
-         landmarkName = "testApp::optimizeWithTranslation(const ofVec3f max, int step)"
+         landmarkName = "testApp::optimizeWithMapping(const ofVec3f&amp; maxTrans, int transRes, const ofVec3f&amp; maxRot, int rotRes)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -169,7 +169,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "560"
          endingLineNumber = "560"
-         landmarkName = "testApp::draw()"
+         landmarkName = "testApp::drawHowToUse()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint

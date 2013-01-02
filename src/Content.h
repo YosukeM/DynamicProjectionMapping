@@ -16,7 +16,7 @@ class testApp;
 
 class Content {
 protected:
-	testApp* parent = NULL;
+	testApp* parent;
 public:
 	ofImage output;
 	

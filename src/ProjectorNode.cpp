@@ -11,7 +11,7 @@
 ProjectorNode::ProjectorNode() {
 	setNearClip(0.01f);
 	setFarClip(100.0f);
-	setFov(25.2f);
+	setFov(26.2f);	// 25.2
 }
 
 void ProjectorNode::customDraw() {

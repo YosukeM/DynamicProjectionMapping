@@ -10,44 +10,70 @@
 #include <boost/unordered_set.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "Content.h"
+#include "MovementPredictor.h"
 
 class testApp : public ofBaseApp{
-private:
+public:
 	typedef enum {
 		E_MODE_EDITOR,
 		E_MODE_PROJECTOR,
 		E_MODE_CAMERA,
 	} E_MODE;
 	
-	E_MODE mode;
+	class ViewportVert {
+	public:
+		ofVec3f source;
+		ofVec2f position;
+	};
 	
-	ofxCvContourFinder finder;
-	std::vector<ofVec2f> lightpoints;
+private:
+	typedef int Id2d;
+	
+	typedef std::pair<Id2d, ofVec3f> VertMapping;
+	
+	E_MODE mode;
+	bool isTracking = false;
+	int counter = 0;
+	
+	boost::unordered_set<VertMapping> mappings;
 	boost::unordered_set<ofVec3f> modelPointsConsidered;
 	
 	CameraNode camera;
 	ProjectorNode projector;
 	ofNode projectorBase;
 	ofxAssimpModelLoader model;
-	ofNode modelBase;
 	boost::scoped_ptr<Content> currentContent;
 
-	ofxCvColorImage colorImage;
-	ofxCvGrayscaleImage grayscaleImage;
-	
 	ofEasyCam editorCamera;
+	MovementPredictor predictor;
 	
-	int vertsNum = 0;
+public:
+	ofNode modelBase;
+	
+private:
+	std::vector<ViewportVert> getViewportVerts(const ofPoint& deltaPos = ofPoint(), const ofQuaternion& deltaRot = ofQuaternion(), bool reconsider_points = false);
 
-	std::vector<ofVec2f> getViewportVerts(const ofPoint& deltaPos = ofPoint(), const ofQuaternion& deltaRot = ofQuaternion(), bool reconsider_points = false);
-	float pointsDifference(const std::vector<ofVec2f>& lightPointsOriginal, const std::vector<ofVec2f>& viewportVertsOriginal) const;
+	void updateMapping();
+	void predictNextLightPoints();
+	
+	// tracking
+	float mappedPointsDifference(const std::vector<CameraNode::LightPoint>&, const std::vector<ViewportVert>&) const;
 	
 	void determineWhichModelPointsConsidered();
-
-	void applyOptimizationForTranslation(const ofVec3f max, int resolution);
-	void applyOptimizationForOrientation(const ofVec3f max, int resolution, bool reconsider_points = false);
 	
+	void optimizeWithMappedTranslation(const ofVec3f max, int resolution);
+	void optimizeWithMappedOrientation(const ofVec3f max, int resolution);
+	void optimizeWithMapping(const ofVec3f& maxTrans, int transRes, const ofVec3f& maxRot, int rotRes);
+	
+	// not tracking
 	void activate();
+	
+	float pointsDifference(const std::vector<CameraNode::LightPoint>&, const std::vector<ViewportVert>&);
+	void optimize(const ofVec3f& maxTrans, int transRes, const ofVec3f& maxRot, int rotRes);
+	void optimizeWithTranslation(const ofVec3f max, int resolution);
+	void optimizeWithOrientation(const ofVec3f max, int resolution);
+	
+	void drawHowToUse();
 	
 public:
 	void setup();

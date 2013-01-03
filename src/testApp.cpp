@@ -1,9 +1,4 @@
 #include "testApp.h"
-#ifndef _WIN32
-#include <GLUT/GLUT.h>
-#else
-#include "glut.h"
-#endif
 #include "DiceContent.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/range.hpp>
@@ -23,9 +18,10 @@ void testApp::setup() {
 	ofSetFullscreen(true);
 	
 	// モデルの設定
-	modelBase.setPosition(0.0f, -0.204f, -0.272324f);
+	modelBase.setPosition(0.0f, 0.0f, -1.272324f);
 	modelBase.setScale(0.01f);
-	modelBase.tilt(49.2f);
+	modelBase.tilt(-45.0f);
+	modelBase.roll(45.0f);
 	
 	model.setScaleNomalization(false);
 	model.loadModel("cube_ver5.obj");
@@ -33,9 +29,6 @@ void testApp::setup() {
 	ofEnableNormalizedTexCoords();
 	
 	// プロジェクターとカメラの設定
-	projectorBase.setPosition(-0.05585744f, 0.0265303f, 0.02653026f);
-	projectorBase.tilt(-45.0f);
-	
 	projector.setParent(projectorBase);
 	projector.setPosition(-0.0455f, 0.0f, -0.0375f);
 	
@@ -663,28 +656,29 @@ void testApp::draw(){
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-	bool shift = (glutGetModifiers() & GLUT_ACTIVE_SHIFT) != 0;
+	bool shift = ofGetKeyPressed(OF_KEY_SHIFT);
+	float k = shift? 10.0f : 1.0f;
 	
 	switch (key) {
 		case OF_KEY_UP:
 			if (ofGetKeyPressed('r')) {
 				if (ofGetKeyPressed('x')) {
-					modelBase.rotate(1.0f, ofVec3f(0.01f, 0.0f, 0.0f));
+					modelBase.rotate(1.0f * k, ofVec3f(0.01f, 0.0f, 0.0f));
 				} else if (ofGetKeyPressed('y')) {
-					modelBase.rotate(1.0f, ofVec3f(0.0f, 0.01f, 0.0f));
+					modelBase.rotate(1.0f * k, ofVec3f(0.0f, 0.01f, 0.0f));
 				} else if (ofGetKeyPressed('z')) {
-					modelBase.rotate(1.0f, ofVec3f(0.0f, 0.0f, 0.01f));
+					modelBase.rotate(1.0f * k, ofVec3f(0.0f, 0.0f, 0.01f));
 				}
 			} else if (ofGetKeyPressed('x')) {
-				modelBase.move(0.01f, 0.0f, 0.0f);
+				modelBase.move(0.01f * k, 0.0f, 0.0f);
 			} else if (ofGetKeyPressed('y')) {
-				modelBase.move(0.0f, 0.01f, 0.0f);
+				modelBase.move(0.0f, 0.01f * k, 0.0f);
 			} else if (ofGetKeyPressed('z')) {
-				modelBase.move(0.0f, 0.0f, 0.01f);
-			} else if (!shift) {
-				camera.tilt(0.2f);
-			} else {
-				camera.setFov(camera.getFov() + 0.2f);
+				modelBase.move(0.0f, 0.0f, 0.01f * k);
+			} else if (ofGetKeyPressed('v')) {
+				camera.tilt(0.1f * k);
+			} else if (ofGetKeyPressed('o')) {
+				projector.move(0.0f, 0.01f * k, 0.0f);
 			}
 			break;
 			
@@ -703,26 +697,26 @@ void testApp::keyPressed(int key){
 				modelBase.move(0.0f, -0.01f, 0.0f);
 			} else if (ofGetKeyPressed('z')) {
 				modelBase.move(0.0f, 0.0f, -0.01f);
-			} else if (!shift) {
-				camera.tilt(-0.2f);
-			} else {
-				camera.setFov(camera.getFov() - 0.2f);
+			} else if (ofGetKeyPressed('v')) {
+				camera.tilt(-0.1f * k);
+			} else if (ofGetKeyPressed('o')) {
+				projector.move(0.0f, -0.01f * k, 0.0f);
 			}
 			break;
 			
 		case OF_KEY_RIGHT:
-			if (!shift) {
-				projector.setPosition(projector.getPosition() + ofVec3f(0.01f, 0.0f, 0.0f));
-			} else {
-				projector.setFov(projector.getFov() + 0.2f);
+			if (ofGetKeyPressed('v')) {
+				camera.setFov(camera.getFov() - 0.1f * k);
+			} else if (ofGetKeyPressed('o')) {
+				projector.setFov(projector.getFov() + 0.1f * k);
 			}
 			break;
 			
 		case OF_KEY_LEFT:
-			if (!shift) {
-				projector.setPosition(projector.getPosition() - ofVec3f(0.01f, 0.0f, 0.0f));
-			} else {
-				projector.setFov(projector.getFov() - 0.2f);
+			if (ofGetKeyPressed('v')) {
+				camera.setFov(camera.getFov() + 0.1f * k);
+			} else if (ofGetKeyPressed('o')) {
+				projector.setFov(projector.getFov() - 0.1f * k);
 			}
 			break;
 			
